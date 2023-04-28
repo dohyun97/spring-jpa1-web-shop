@@ -19,6 +19,14 @@ public class ItemService {
         repository.save(item);
     }
 
+    @Transactional
+    public void updateItem(Long id,String name,int price,int stockQuantity){
+        Item item = repository.findOne(id);
+        item.setName(name);
+        item.setPrice(price);
+        item.setStockQuantity(stockQuantity);
+    }
+
     public List<Item> findItems(){
         return repository.findAll();
     }
