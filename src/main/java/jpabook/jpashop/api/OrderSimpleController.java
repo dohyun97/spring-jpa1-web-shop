@@ -30,7 +30,7 @@ public class OrderSimpleController {
     private final OrderSimpleQueryRepository queryRepository;
 
     /**
-     * V2. 엔티티를 조회해서 DTO로 변환(fetch join 사용X) * - 단점: 지연로딩으로 쿼리 N번 호출
+     * V2. 엔티티를 조회해서 DTO로 변환(fetch join 사용X) * - 단점: 지연로딩으로 쿼리 N번 호출,On
      */
     @GetMapping("/api/v2/simple-orders")
     public Result orderV2(){
