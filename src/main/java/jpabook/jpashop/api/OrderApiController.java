@@ -1,6 +1,10 @@
 package jpabook.jpashop.api;
 
 import jpabook.jpashop.domain.*;
+import jpabook.jpashop.repository.order.query.OrderFlatDto;
+import jpabook.jpashop.repository.order.query.OrderItemQueryDto;
+import jpabook.jpashop.repository.order.query.OrderQueryDto;
+import jpabook.jpashop.repository.order.query.OrderQueryRepository;
 import jpabook.jpashop.service.OrderService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.*;
 
 /**
  * xToOne(ManyToOne, OneToOne) and OneToMany 관계 최적화 (List<>orderItems추가)
@@ -35,6 +41,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderApiController {
     private final OrderService service;
+    private final OrderQueryRepository orderQueryRepository;
 
     /**
      * V2. 엔티티를 조회해서 DTO로 변환(fetch join 사용X) * - 단점: 지연로딩으로 쿼리 N번 호출
@@ -44,7 +51,7 @@ public class OrderApiController {
         List<Order> orders = service.findOrders(new OrderSearch());
         List<OrderDto> collect = orders.stream()
                 .map(o -> new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
         return new Result(collect);
     }
 
@@ -59,7 +66,7 @@ public class OrderApiController {
         List<Order> orders = service.findOrdersWithItems();
         List<OrderDto> collect = orders.stream()
                 .map(o -> new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
         return new Result(collect);
     }
 
@@ -74,9 +81,40 @@ public class OrderApiController {
         List<Order> orders = service.findOrdersWithMemberDelivery_page(offset,limit);
         List<OrderDto> collect = orders.stream()
                 .map(o -> new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
         return new Result(collect);
     }
+
+    /**
+     * Jpa에서 DTO 직접 조회 -쿼리 3번 호출: 루트 1번, 컬렉션 2번(2개의 주문 아이디가 있어서)
+     */
+    @GetMapping("/api/v4/orders")
+    public List<OrderQueryDto> ordersV4() {
+        return orderQueryRepository.findOrderQueryDtos();
+    }
+    /**
+     * Jpa에서 DTO 직접 조회 -쿼리 3번 호출: 루트 1번, 컬렉션 1번(in절 사용)
+     */
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> ordersV5() {
+        return orderQueryRepository.findAllByDto_optimization();
+    }
+
+    /**
+     * Jpa에서 DTO 직접 조회 -쿼리 1번 호출
+     */
+    @GetMapping("/api/v6/orders")
+    public List<OrderQueryDto> ordersV6() {
+        List<OrderFlatDto> flats = orderQueryRepository.findAllByDto_flat();
+        return flats.stream()
+                .collect(groupingBy(o -> new OrderQueryDto(o.getOrderId(), o.getName(), o.getOrderDate(), o.getOrderStatus(), o.getAddress()),
+                        mapping(o -> new OrderItemQueryDto(o.getOrderId(), o.getItemName(), o.getOrderPrice(), o.getCount()), toList())))
+                .entrySet().stream()
+                .map(e -> new OrderQueryDto(e.getKey().getOrderId(), e.getKey().getName(), e.getKey().getOrderDate(), e.getKey().getOrderStatus(), e.getKey().getAddress(), e.getValue()))
+                .collect(toList());
+    }
+
+
 
     @Data
     @AllArgsConstructor
@@ -99,7 +137,7 @@ public class OrderApiController {
             address = order.getDelivery().getAddress();
             orderItems= order.getOrderItems().stream()
                     .map(i -> new OrderItemDto(i))
-                    .collect(Collectors.toList());
+                    .collect(toList());
         }
 
     }

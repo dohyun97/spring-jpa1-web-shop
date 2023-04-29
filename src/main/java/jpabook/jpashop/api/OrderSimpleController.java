@@ -1,10 +1,9 @@
 package jpabook.jpashop.api;
 
 import jpabook.jpashop.domain.*;
-import jpabook.jpashop.repository.OrderRepository;
 
-import jpabook.jpashop.repository.simplequery.OrderSimpleQueryDto;
-import jpabook.jpashop.repository.simplequery.OrderSimpleQueryRepository;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryRepository;
 import jpabook.jpashop.service.OrderService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
