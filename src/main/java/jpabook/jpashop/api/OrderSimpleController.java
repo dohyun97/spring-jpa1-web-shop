@@ -3,6 +3,8 @@ package jpabook.jpashop.api;
 import jpabook.jpashop.domain.*;
 import jpabook.jpashop.repository.OrderRepository;
 
+import jpabook.jpashop.repository.simplequery.OrderSimpleQueryDto;
+import jpabook.jpashop.repository.simplequery.OrderSimpleQueryRepository;
 import jpabook.jpashop.service.OrderService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,14 +18,17 @@ import java.util.stream.Collectors;
 
 /** *
  * xToOne(ManyToOne, OneToOne) 관계 최적화 * Order
- * Order -> Member
- * Order -> Delivery
+ * Order -> Member  //ManyToOne
+ * Order -> Delivery  //OneToMany
  *
+ *items 부분은 이쪽 연관관계가 아닌데 내가 그냥 해봤어(ordrAPIController)에서 자세히 설명..
  */
 @RestController
 @RequiredArgsConstructor
 public class OrderSimpleController {
     private final OrderService service;
+    private final OrderSimpleQueryRepository queryRepository;
+
     /**
      * V2. 엔티티를 조회해서 DTO로 변환(fetch join 사용X) * - 단점: 지연로딩으로 쿼리 N번 호출
      */
@@ -49,6 +54,15 @@ public class OrderSimpleController {
         return new Result(collect);
     }
 
+    /**
+     * V4. JPA에서 DTO로 바로 조회(Repository)
+     *-쿼리1번 호출
+     * - select 절에서 원하는 데이터만 선택해서 조회 */
+    @GetMapping("/api/v4/simple-orders")
+    public List<OrderSimpleQueryDto> ordersV4(){
+        return queryRepository.findOrderDtos();
+    }
+
     @Data
     @AllArgsConstructor
     static class Result<T>{
@@ -71,6 +85,7 @@ public class OrderSimpleController {
             address = order.getDelivery().getAddress();
             orderItems= getSingleItemName(order);
         }
+        //이부분은 items를 위한 부분 내가 그냥 한거야
         private ItemResult getSingleItemName(Order order){
             List<String> items = order.getOrderItems().stream()
                     .map(i->i.getItem().getName())
@@ -78,7 +93,7 @@ public class OrderSimpleController {
             return new ItemResult(items);
         }
     }
-    @Data
+    @Data   //이부분은 items를 위한 부분 내가 그냥한거야
     @AllArgsConstructor
     static class ItemResult<T>{
         private T item;
